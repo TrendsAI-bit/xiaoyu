@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export default function XiaoyuVRM() {
   const mountRef = useRef();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let renderer, scene, camera, vrm;
@@ -11,8 +12,15 @@ export default function XiaoyuVRM() {
       Promise.all([
         import("three"),
         import("@pixiv/three-vrm")
-      ]).then(([THREE, VRMExports]) => {
-        const { VRMLoader } = VRMExports;
+      ]).then(([THREE, VRM]) => {
+        // Robustly get VRMLoader
+        let VRMLoader = VRM.VRMLoader || (VRM.default && VRM.default.VRMLoader);
+        if (!VRMLoader) {
+          // Log the import for debugging
+          console.error("VRM import structure:", VRM);
+          setError("Failed to load VRMLoader from @pixiv/three-vrm. See console for details.");
+          return;
+        }
         const width = mountRef.current.clientWidth;
         const height = mountRef.current.clientHeight;
         scene = new THREE.Scene();
@@ -29,15 +37,23 @@ export default function XiaoyuVRM() {
         scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 
         const loader = new VRMLoader();
-        loader.load("/xiaoyu.vrm", (loadedVrm) => {
-          vrm = loadedVrm;
-          scene.add(vrm.scene);
-          animate();
-        });
+        loader.load(
+          "/xiaoyu.vrm",
+          (loadedVrm) => {
+            vrm = loadedVrm;
+            scene.add(vrm.scene);
+            animate();
+          },
+          undefined,
+          (err) => {
+            setError("Failed to load VRM model. See console for details.");
+            console.error("VRM load error:", err);
+          }
+        );
 
         function animate() {
           requestAnimationFrame(animate);
-          if (vrm) vrm.update(1/60);
+          if (vrm) vrm.update(1 / 60);
           renderer.render(scene, camera);
         }
 
@@ -45,11 +61,18 @@ export default function XiaoyuVRM() {
           renderer.dispose();
           if (mountRef.current) mountRef.current.removeChild(renderer.domElement);
         };
+      }).catch((err) => {
+        setError("Failed to import Three.js or three-vrm. See console for details.");
+        console.error("Dynamic import error:", err);
       });
     }
 
     return () => cleanup();
   }, []);
+
+  if (error) {
+    return <div className="text-red-600 font-bold p-4">{error}</div>;
+  }
 
   return <div ref={mountRef} style={{ width: "100%", height: "100%" }} />;
 } 

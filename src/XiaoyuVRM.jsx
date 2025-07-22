@@ -30,10 +30,10 @@ export default function XiaoyuVRM() {
         scene.add(light);
         scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 
-        // Register VRM extension
-        GLTFLoader.register(VRM.VRMLoaderPlugin);
-
+        // Register VRM extension on the loader instance
         const loader = new GLTFLoader();
+        loader.register(VRM.VRMLoaderPlugin);
+
         loader.load(
           "/xiaoyu.vrm",
           (gltf) => {

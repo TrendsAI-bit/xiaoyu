@@ -1,4 +1,26 @@
-import React from "react";
+import React, { Suspense } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, useGLTF } from "@react-three/drei";
+
+useGLTF.preload("/xiaoyu.glb");
+
+function XiaoyuModel() {
+  const { scene } = useGLTF("/xiaoyu.glb");
+  return <primitive object={scene} />;
+}
+
+function Xiaoyu3D() {
+  return (
+    <Canvas camera={{ position: [0, 1.5, 3] }} style={{ width: "100%", height: "100%" }}>
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[0, 5, 5]} intensity={1} />
+      <Suspense fallback={null}>
+        <XiaoyuModel />
+      </Suspense>
+      <OrbitControls />
+    </Canvas>
+  );
+}
 
 function App() {
   return (
@@ -9,8 +31,7 @@ function App() {
       </header>
       <main className="w-full max-w-2xl flex flex-col items-center gap-6 mt-8">
         <div className="w-full h-96 bg-white rounded shadow flex items-center justify-center">
-          {/* 3D Canvas Placeholder */}
-          <span className="text-gray-400">[3D Xiaoyu Model Here]</span>
+          <Xiaoyu3D />
         </div>
         <div className="w-full flex flex-col gap-2">
           <div className="flex items-center gap-2">
